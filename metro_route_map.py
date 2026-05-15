@@ -422,9 +422,9 @@ def setup_app() -> None:
             html.Div(
                 style={"position": "absolute", "top": 0, "left": 0, "width": "100%", "height": "100%", "zIndex": "1"},
                 children=[
-                    dcc.Graph(id="route-map", style={"height": "100%"}, config={"displaylogo": False, "displayModeBar": False}),
+                    dcc.Graph(id="route-map", style={"height": "100%"}, config={"displaylogo": False}),
                     html.Div(
-                        style={"position": "absolute", "top": "20px", "right": "20px", "display": "flex", "flexDirection": "column", "gap": "10px", "zIndex": "1000"},
+                        style={"position": "absolute", "top": "80px", "right": "20px", "display": "flex", "flexDirection": "column", "gap": "10px", "zIndex": "1000"},
                         children=[
                             html.Div(style={**CTRL_STYLE, "width": "36px", "height": "36px", "boxSizing": "border-box"}, children=[html.Img(src=SVG_CHAT)]),
                             html.Div(
