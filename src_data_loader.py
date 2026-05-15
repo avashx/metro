@@ -95,19 +95,18 @@ class DataLoader:
         proposed = pd.DataFrame({
             'name': [
                 'Dhansa Bus Stand',
+                'Najafgarh',
                 'Mitraon',
-                'Dichaon Kalan',
+                'Jafarpur Kalan',
+                'Surhera',
+                'Kharkhari Nahar',
                 'Baprola',
-                'Ranhola',
-                'Nihal Vihar',
-                'Shiv Ram Park',
-                'Kavita Colony',
-                'Nangloi Metro'
+                'Bakkarwala',
+                'Nangloi'
             ],
-            'lat': [28.612365, 28.623174, 28.633983, 28.644792, 28.655601, 28.662305, 28.66901, 28.675715, 28.682419],
-            'lon': [76.977768, 76.993368, 77.008968, 77.024568, 77.040167, 77.046331, 77.052494, 77.058657, 77.064821],
-            'type': ['major', 'minor', 'medium', 'minor', 'major', 'medium', 'minor', 'minor', 'major'],
-            'is_underground': [False, False, False, True, True, True, False, False, False]
+            'lat': [28.612365, 28.621122, 28.629879, 28.638635, 28.647392, 28.656149, 28.664905, 28.673662, 28.682419],
+            'lon': [76.977768, 76.988650, 76.999531, 77.010413, 77.021294, 77.032176, 77.043058, 77.053939, 77.064821],
+            'type': ['major', 'major', 'minor', 'medium', 'medium', 'minor', 'minor', 'minor', 'major']
         })
         
         # Convert to GeoDataFrame

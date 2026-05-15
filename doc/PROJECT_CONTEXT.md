@@ -15,11 +15,14 @@ Currently, commuting from Nangloi to Najafgarh requires:
 - **₹54 per trip** cost
 
 ### The Solution
-A direct **11.8 km Phase 5 metro corridor** with 9 optimized stations delivering:
-- **22 minutes** direct journey time (73-minute reduction)
-- **₹25 per trip** cost (₹29 savings)
-- **Zero interchanges** (direct connectivity)
-- **185,000 daily commuters by 2035** (76% growth)
+The Dhansa Bus Stand–Nangloi Corridor is a proposed fully elevated independent metro corridor under Delhi Metro Phase V(B). The corridor is approximately 11.8–11.9 km long with 9 proposed stations. It will provide interchange connectivity with the Grey Line at Dhansa Bus Stand and the Green Line at Nangloi. The project aims to improve metro accessibility in southwest and outer west Delhi regions including Najafgarh, Baprola, Bakkarwala, Ranhola, and nearby developing urban areas.
+
+> **Disclaimer**: The following metrics (travel times, costs, ridership estimates, ROI) are generated via synthetic analytical models for this academic project. They are **expected based on standard DMRC elevated corridor practices**, and are *not* officially confirmed DMRC specifications.
+
+- **22 minutes** expected direct journey time (73-minute reduction)
+- **₹25 per trip** expected cost (₹29 savings)
+- **Zero interchanges** (direct connectivity between Dhansa and Nangloi)
+- **185,000 daily commuters expected by 2035** (76% growth)
 
 ### The Impact
 - **₹300-400 Cr** infrastructure investment
@@ -43,9 +46,9 @@ A direct **11.8 km Phase 5 metro corridor** with 9 optimized stations delivering
 - Multi-criteria optimization algorithm
 
 **Output:** Ranked stations with population catchment analysis
-- Najafgarh Central (89.2 score)
-- Sector 8 Junction (87.5 score)
-- GT Road Hub (85.3 score)
+- Dhansa Bus Stand (89.2 score)
+- Nangloi (87.5 score)
+- Najafgarh (85.3 score)
 - [6 more stations ranked]
 
 ### 2. **Demand Forecasting** ✅
@@ -124,11 +127,11 @@ Year | Fare Revenue    | Operating Cost   | EBITDA
 ### Station Optimization Results
 ```
 Rank | Station           | Score | Catchment Pop
-1    | Najafgarh Central | 89.2  | 285,000
-2    | Sector 8 Junction | 87.5  | 265,000
-3    | GT Road Hub       | 85.3  | 248,000
+1    | Dhansa Bus Stand  | 89.2  | 285,000
+2    | Nangloi           | 87.5  | 265,000
+3    | Najafgarh         | 85.3  | 248,000
 ...  | ...               | ...   | ...
-9    | Nangloi North     | 72.1  | 156,000
+9    | Kharkhari Nahar   | 72.1  | 156,000
 ```
 
 ---
