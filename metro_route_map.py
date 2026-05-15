@@ -37,6 +37,18 @@ LAND_USE_PALETTE = {
     "Industrial": "#FDD835",
 }
 
+SVG_CHAT = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' fill='%23A0AAB5'><path d='M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z'/></svg>"
+SVG_EXPAND = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='18' height='18' fill='%23A0AAB5'><path d='M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z'/></svg>"
+SVG_RULER = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' fill='%23A0AAB5'><path d='M19.9 4.1c-1.56-1.56-4.09-1.56-5.66 0l-10.6 10.6c-1.56 1.56-1.56 4.09 0 5.66 1.56 1.56 4.09 1.56 5.66 0l10.6-10.6c1.56-1.56 1.56-4.09 0-5.66zM7.34 18.24L5.93 16.83l1.41-1.41 1.41 1.41 1.41-1.41-1.41-1.41 1.41-1.41 1.41 1.41 1.41-1.41-1.41-1.41 1.41-1.41 1.41 1.41 2.83-2.83 1.41 1.41-11.31 11.31z'/></svg>"
+SVG_STAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' fill='%23A0AAB5'><path d='M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z'/></svg>"
+SVG_LAYERS = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='18' height='18' fill='%23A0AAB5'><path d='M12 2L2 7l10 5 10-5-10-5zM2 12l10 5 10-5M2 17l10 5 10-5'/></svg>"
+SVG_GLOBE = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' fill='%23A0AAB5'><path d='M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.91 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.09 13.36 4 12.69 4 12s.09-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2 0 .68.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.9-4.33-3.56zm2.95-8H5.08c.96-1.66 2.49-2.93 4.33-3.56C8.81 5.55 8.35 6.75 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2 0-.68.07-1.35.16-2h4.68c.09.65.16 1.32.16 2 0 .68-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2 0-.68-.06-1.34-.14-2h3.38c.17.64.26 1.31.26 2s-.09 1.36-.26 2h-3.38z'/></svg>"
+
+CTRL_STYLE = {
+    "background": "#1A1D20", "borderRadius": "8px", "boxShadow": "0 2px 10px rgba(0,0,0,0.2)",
+    "display": "flex", "alignItems": "center", "justifyContent": "center", "padding": "8px", "cursor": "pointer"
+}
+
 
 def haversine_distance_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Distance between two WGS84 points in meters."""
@@ -124,14 +136,73 @@ def make_land_use_inventory(stations: pd.DataFrame, station_demand: pd.DataFrame
     return df
 
 
+def calculate_growth_multiplier(target_year: int) -> float:
+    """Calculate the compound growth multiplier based on MP2041."""
+    multiplier = 1.0
+    base_year = 2025
+    if target_year == base_year:
+        return multiplier
+    for y in range(base_year + 1, target_year + 1):
+        if y <= 2030:
+            multiplier *= 1.022
+        else:
+            multiplier *= 1.028
+    return multiplier
+
+
+def build_growth_chart(opportunities: pd.DataFrame, radius_m: int, current_year: int) -> go.Figure:
+    """Build the Plotly line chart for population growth forecasting."""
+    visible_base = opportunities[opportunities["nearest_station_distance_m"] <= radius_m]
+    base_pop_sum = visible_base["population_potential"].sum()
+
+    years = []
+    populations = []
+    for y in range(2025, 2041):
+        mult = calculate_growth_multiplier(y)
+        years.append(y)
+        populations.append(int(base_pop_sum * mult))
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=years,
+        y=populations,
+        mode="lines+markers",
+        line={"color": "#2E7D78", "width": 3},
+        marker={"size": 6},
+        name="Forecast"
+    ))
+
+    current_pop = populations[current_year - 2025]
+    fig.add_trace(go.Scatter(
+        x=[current_year],
+        y=[current_pop],
+        mode="markers",
+        marker={"size": 12, "color": "#D84315"},
+        name="Current Year"
+    ))
+
+    fig.update_layout(
+        margin={"l": 50, "r": 20, "t": 30, "b": 30},
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        title={"text": "Catchment Population Growth", "font": {"size": 13, "color": "#203040"}},
+        xaxis={"fixedrange": True, "dtick": 3, "gridcolor": "#E0E6F2"},
+        yaxis={"fixedrange": True, "gridcolor": "#E0E6F2"},
+        showlegend=False,
+    )
+    return fig
+
+
 def build_figure(
     proposed_stations: pd.DataFrame,
     existing_stations: pd.DataFrame,
     opportunities: pd.DataFrame,
     radius_m: int,
+    growth_multiplier: float,
 ) -> Tuple[go.Figure, int, int, pd.Series]:
     """Create map for selected catchment radius and return summary metrics."""
     visible = opportunities[opportunities["nearest_station_distance_m"] <= radius_m].copy()
+    visible["population_potential"] = (visible["population_potential"] * growth_multiplier).astype(int)
 
     total_visible_pop = int(visible["population_potential"].sum())
     total_visible_points = int(len(visible))
@@ -210,17 +281,16 @@ def build_figure(
                     "opacity": 0.82,
                     "color": visible["population_potential"],
                     "colorscale": [
-                        [0.0, "#1E4F9F"],
-                        [0.35, "#69B8E8"],
-                        [0.65, "#A7D96A"],
-                        [1.0, "#F2D53C"],
+                        [0.0, "#001C46"],
+                        [0.125, "#04377A"],
+                        [0.25, "#265A98"],
+                        [0.375, "#4782BE"],
+                        [0.5, "#6AA8D7"],
+                        [0.625, "#8BD2DA"],
+                        [0.75, "#ABDFBE"],
+                        [0.875, "#CFF0A1"],
+                        [1.0, "#F2E96B"],
                     ],
-                    "cmin": opportunities["population_potential"].min(),
-                    "cmax": opportunities["population_potential"].max(),
-                    "colorbar": {
-                        "title": "Population potential",
-                        "x": 0.99,
-                    },
                 },
                 customdata=np.stack(
                     [
@@ -319,8 +389,12 @@ def build_figure(
     return fig, total_visible_pop, total_visible_points, by_land_use
 
 
-def main() -> None:
-    """Run the Dash app."""
+app = dash.Dash(__name__)
+server = app.server
+app.title = "Phase 5 Route Opportunity Map"
+
+def setup_app() -> None:
+    """Run the Dash app setup."""
     loader = DataLoader()
     existing_gdf, proposed_gdf = loader.load_stations()
 
@@ -334,106 +408,256 @@ def main() -> None:
 
     proposed_stations = proposed_gdf[["name", "lat", "lon", "type", "is_underground"]].copy()
     existing_stations = existing_gdf[["name", "lat", "lon", "type"]].copy()
-
-    app = dash.Dash(__name__)
-    app.title = "Phase 5 Route Opportunity Map"
-
     app.layout = html.Div(
         style={
-            "fontFamily": "Avenir Next, Segoe UI, Helvetica, sans-serif",
-            "background": "linear-gradient(120deg, #EEF2F7 0%, #E7ECF4 100%)",
+            "fontFamily": "'Inter', 'Segoe UI', Helvetica, sans-serif",
             "height": "100vh",
-            "padding": "14px",
-            "boxSizing": "border-box",
+            "width": "100vw",
+            "margin": "0",
+            "padding": "0",
+            "position": "relative",
+            "overflow": "hidden"
         },
         children=[
             html.Div(
+                style={"position": "absolute", "top": 0, "left": 0, "width": "100%", "height": "100%", "zIndex": "1"},
+                children=[
+                    dcc.Graph(id="route-map", style={"height": "100%"}, config={"displaylogo": False, "displayModeBar": False}),
+                    html.Div(
+                        style={"position": "absolute", "top": "20px", "right": "20px", "display": "flex", "flexDirection": "column", "gap": "10px", "zIndex": "1000"},
+                        children=[
+                            html.Div(style={**CTRL_STYLE, "width": "36px", "height": "36px", "boxSizing": "border-box"}, children=[html.Img(src=SVG_CHAT)]),
+                            html.Div(
+                                style={**CTRL_STYLE, "width": "36px", "flexDirection": "column", "padding": "10px 0", "boxSizing": "border-box"},
+                                children=[
+                                    html.Img(src=SVG_EXPAND, style={"marginBottom": "16px"}),
+                                    html.Img(src=SVG_RULER)
+                                ]
+                            )
+                        ]
+                    ),
+                    html.Div(
+                        style={"position": "absolute", "bottom": "30px", "right": "20px", "display": "flex", "alignItems": "flex-end", "gap": "12px", "zIndex": "1000"},
+                        children=[
+                            html.Div(
+                                style={**CTRL_STYLE, "height": "36px", "padding": "0 16px", "gap": "20px", "boxSizing": "border-box"},
+                                children=[
+                                    html.Img(src=SVG_STAR),
+                                    html.Img(src=SVG_LAYERS),
+                                    html.Img(src=SVG_GLOBE)
+                                ]
+                            ),
+                            html.Div(
+                                style={**CTRL_STYLE, "width": "36px", "flexDirection": "column", "padding": "10px 0", "gap": "14px", "boxSizing": "border-box"},
+                                children=[
+                                    html.Span("+", style={"color": "#A0AAB5", "fontSize": "22px", "lineHeight": "1", "fontFamily": "monospace"}),
+                                    html.Span("-", style={"color": "#A0AAB5", "fontSize": "26px", "lineHeight": "1", "fontFamily": "monospace"})
+                                ]
+                            )
+                        ]
+                    )
+                ]
+            ),
+            html.Div(
                 style={
-                    "display": "grid",
-                    "gridTemplateColumns": "340px 1fr",
-                    "gap": "14px",
-                    "height": "100%",
+                    "position": "absolute",
+                    "top": "20px",
+                    "left": "20px",
+                    "width": "340px",
+                    "background": "rgba(255, 255, 255, 0.98)",
+                    "borderRadius": "12px",
+                    "boxShadow": "0 4px 16px rgba(0,0,0,0.1)",
+                    "padding": "0",
+                    "zIndex": "1000",
+                    "maxHeight": "calc(100vh - 40px)",
+                    "overflowY": "auto",
+                    "display": "flex",
+                    "flexDirection": "column"
                 },
                 children=[
                     html.Div(
-                        style={
-                            "background": "rgba(255,255,255,0.94)",
-                            "borderRadius": "14px",
-                            "padding": "14px",
-                            "boxShadow": "0 10px 24px rgba(27, 39, 60, 0.12)",
-                            "overflow": "auto",
-                        },
+                        style={"padding": "20px 20px 10px 20px", "borderBottom": "1px solid #EAEAEA"},
                         children=[
-                            html.H3("Layer", style={"margin": "0 0 8px 0", "color": "#203040"}),
-                            html.P(
-                                "Possible station route with nearby land-use and population potential",
-                                style={"margin": "0 0 12px 0", "color": "#52606D", "fontSize": "13px"},
-                            ),
-                            html.Label(
-                                "Catchment Radius Around Stations",
-                                style={"fontWeight": "600", "color": "#263238", "fontSize": "13px"},
-                            ),
-                            dcc.Slider(
-                                id="radius-slider",
-                                min=200,
-                                max=2500,
-                                step=100,
-                                value=900,
-                                marks={i: f"{i/1000:.1f} km" for i in [200, 600, 1000, 1500, 2000, 2500]},
-                                tooltip={"always_visible": False, "placement": "bottom"},
-                            ),
-                            html.Div(id="radius-text", style={"marginTop": "8px", "fontSize": "12px", "color": "#4F5D6B"}),
-                            html.Hr(style={"margin": "14px 0"}),
                             html.Div(
-                                [
+                                style={"display": "flex", "alignItems": "center", "justifyContent": "space-between", "marginBottom": "16px"},
+                                children=[
                                     html.Div(
-                                        [
-                                            html.Div("Nearby population", style={"fontSize": "12px", "color": "#60717F"}),
-                                            html.Div(id="population-kpi", style={"fontSize": "22px", "fontWeight": "700", "color": "#0B3A6E"}),
-                                        ],
-                                        style={"marginBottom": "12px"},
+                                        style={"display": "flex", "alignItems": "center"},
+                                        children=[
+                                            html.Img(src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='20' height='20' fill='%23203040'><path d='M12 2L2 7l10 5 10-5-10-5zM2 12l10 5 10-5M2 17l10 5 10-5'/></svg>", style={"marginRight": "8px", "minWidth": "20px"}),
+                                            html.H3("DMRC Population based Metro demand analysis", style={"margin": "0", "color": "#203040", "fontSize": "14px", "fontWeight": "600"})
+                                        ]
                                     ),
-                                    html.Div(
-                                        [
-                                            html.Div("Visible opportunities", style={"fontSize": "12px", "color": "#60717F"}),
-                                            html.Div(id="opportunity-kpi", style={"fontSize": "22px", "fontWeight": "700", "color": "#0B3A6E"}),
-                                        ],
-                                        style={"marginBottom": "12px"},
-                                    ),
+                                    html.Span("✕", style={"color": "#A0AAB5", "cursor": "pointer", "fontSize": "14px", "marginLeft": "8px"})
                                 ]
-                            ),
-                            html.Div(id="landuse-breakdown", style={"fontSize": "13px", "color": "#334155"}),
-                        ],
+                            )
+                        ]
                     ),
                     html.Div(
-                        style={
-                            "borderRadius": "14px",
-                            "overflow": "hidden",
-                            "boxShadow": "0 10px 24px rgba(27, 39, 60, 0.12)",
-                            "background": "#DDE4EE",
-                        },
-                        children=[dcc.Graph(id="route-map", style={"height": "100%"}, config={"displaylogo": False})],
-                    ),
-                ],
+                        style={"padding": "20px"},
+                        children=[
+                            html.Details(
+                                style={"marginBottom": "20px", "borderBottom": "1px solid #EAEAEA", "paddingBottom": "12px"},
+                                children=[
+                                    html.Summary(
+                                        style={"cursor": "pointer", "fontSize": "14px", "fontWeight": "600", "color": "#203040", "listStyle": "none", "display": "flex", "justifyContent": "space-between", "alignItems": "center"},
+                                        children=[
+                                            "Reference Dataset",
+                                            html.Span("▼", style={"color": "#A0AAB5", "fontSize": "10px"})
+                                        ]
+                                    ),
+                                    html.Div(
+                                        style={"marginTop": "16px", "display": "flex", "flexDirection": "column", "gap": "14px"},
+                                        children=[
+                                            html.Div(
+                                                style={"display": "flex", "justifyContent": "space-between", "alignItems": "center"},
+                                                children=[
+                                                    html.Span("Landuse", style={"fontSize": "12px", "color": "#708090", "fontWeight": "500", "flex": "1"}),
+                                                    html.Div(
+                                                        style={"display": "flex", "gap": "6px", "flexWrap": "wrap", "flex": "2", "justifyContent": "flex-end"},
+                                                        children=[
+                                                            html.A("OSM LULC", href="#", style={"background": "#E8F0FE", "color": "#1A73E8", "padding": "4px 8px", "borderRadius": "12px", "textDecoration": "none", "fontSize": "10px", "whiteSpace": "nowrap"}),
+                                                            html.A("Master Plan 2041", href="#", style={"background": "#E8F0FE", "color": "#1A73E8", "padding": "4px 8px", "borderRadius": "12px", "textDecoration": "none", "fontSize": "10px", "whiteSpace": "nowrap"}),
+                                                        ]
+                                                    )
+                                                ]
+                                            ),
+                                            html.Div(
+                                                style={"display": "flex", "justifyContent": "space-between", "alignItems": "center"},
+                                                children=[
+                                                    html.Span("Population Forecast", style={"fontSize": "12px", "color": "#708090", "fontWeight": "500", "flex": "1"}),
+                                                    html.Div(
+                                                        style={"display": "flex", "gap": "6px", "flexWrap": "wrap", "flex": "2", "justifyContent": "flex-end"},
+                                                        children=[
+                                                            html.A("Census 2011/21", href="#", style={"background": "#E8F0FE", "color": "#1A73E8", "padding": "4px 8px", "borderRadius": "12px", "textDecoration": "none", "fontSize": "10px", "whiteSpace": "nowrap"}),
+                                                            html.A("2.2% - 2.8% CAGR", href="#", style={"background": "#FCE8E6", "color": "#D93025", "padding": "4px 8px", "borderRadius": "12px", "textDecoration": "none", "fontSize": "10px", "whiteSpace": "nowrap"}),
+                                                        ]
+                                                    )
+                                                ]
+                                            ),
+                                            html.Div(
+                                                style={"display": "flex", "justifyContent": "space-between", "alignItems": "center"},
+                                                children=[
+                                                    html.Span("Metro Stations", style={"fontSize": "12px", "color": "#708090", "fontWeight": "500", "flex": "1"}),
+                                                    html.Div(
+                                                        style={"display": "flex", "gap": "6px", "flexWrap": "wrap", "flex": "2", "justifyContent": "flex-end"},
+                                                        children=[
+                                                            html.A("DMRC DPR Phase 5", href="#", style={"background": "#E8F0FE", "color": "#1A73E8", "padding": "4px 8px", "borderRadius": "12px", "textDecoration": "none", "fontSize": "10px", "whiteSpace": "nowrap"}),
+                                                        ]
+                                                    )
+                                                ]
+                                            ),
+                                            html.Div(
+                                                style={"display": "flex", "justifyContent": "space-between", "alignItems": "center"},
+                                                children=[
+                                                    html.Span("Metro Line Base", style={"fontSize": "12px", "color": "#708090", "fontWeight": "500", "flex": "1"}),
+                                                    html.Div(
+                                                        style={"display": "flex", "gap": "6px", "flexWrap": "wrap", "flex": "2", "justifyContent": "flex-end"},
+                                                        children=[
+                                                            html.A("Historical Ridership", href="#", style={"background": "#E8F0FE", "color": "#1A73E8", "padding": "4px 8px", "borderRadius": "12px", "textDecoration": "none", "fontSize": "10px", "whiteSpace": "nowrap"}),
+                                                        ]
+                                                    )
+                                                ]
+                                            ),
+                                        ]
+                                    )
+                                ]
+                            ),
+                            html.Div(
+                                style={"marginBottom": "20px"},
+                                children=[
+                                    html.Div("Descriptive", style={"fontSize": "11px", "color": "#708090", "fontWeight": "600", "marginBottom": "12px"}),
+                                    html.Div("Catchment Radius", style={"fontSize": "13px", "color": "#203040", "marginBottom": "6px", "fontWeight": "500"}),
+                                    dcc.Slider(
+                                        id="radius-slider", min=200, max=2500, step=100, value=900,
+                                        marks=None, tooltip={"always_visible": False, "placement": "bottom"}
+                                    ),
+                                    html.Div(id="radius-text", style={"fontSize": "11px", "color": "#A0AAB5", "textAlign": "right", "marginTop": "4px"}),
+                                    
+                                    html.Div("Forecast Year", style={"fontSize": "13px", "color": "#203040", "marginBottom": "6px", "fontWeight": "500", "marginTop": "12px"}),
+                                    dcc.Slider(
+                                        id="year-slider", min=2025, max=2040, step=1, value=2025,
+                                        marks=None, tooltip={"always_visible": False, "placement": "bottom"}
+                                    ),
+                                    html.Div(id="year-text", style={"fontSize": "11px", "color": "#A0AAB5", "textAlign": "right", "marginTop": "4px"}),
+                                ]
+                            ),
+                            html.Div(
+                                style={"marginBottom": "20px"},
+                                children=[
+                                    html.Div("Impact", style={"fontSize": "11px", "color": "#708090", "fontWeight": "600", "marginBottom": "12px"}),
+                                    html.Div([
+                                        html.Span("Nearby population", style={"fontSize": "13px", "color": "#203040"}),
+                                        html.Span(id="population-kpi", style={"float": "right", "fontSize": "13px", "fontWeight": "600"})
+                                    ], style={"marginBottom": "8px"}),
+                                    html.Div([
+                                        html.Span("Visible opportunities", style={"fontSize": "13px", "color": "#203040"}),
+                                        html.Span(id="opportunity-kpi", style={"float": "right", "fontSize": "13px", "fontWeight": "600"})
+                                    ], style={"display": "none"}),
+                                ]
+                            ),
+                            html.Div(
+                                children=[
+                                    html.Div([
+
+                                        html.Div(
+                                            style={"display": "flex", "width": "100%", "height": "8px", "borderRadius": "4px", "overflow": "hidden", "marginBottom": "8px"},
+                                            children=[
+                                                html.Div(style={"flex": "1", "background": "#001C46"}),
+                                                html.Div(style={"flex": "1", "background": "#04377A", "borderLeft": "1px solid white"}),
+                                                html.Div(style={"flex": "1", "background": "#265A98", "borderLeft": "1px solid white"}),
+                                                html.Div(style={"flex": "1", "background": "#4782BE", "borderLeft": "1px solid white"}),
+                                                html.Div(style={"flex": "1", "background": "#6AA8D7", "borderLeft": "1px solid white"}),
+                                                html.Div(style={"flex": "1", "background": "#8BD2DA", "borderLeft": "1px solid white"}),
+                                                html.Div(style={"flex": "1", "background": "#ABDFBE", "borderLeft": "1px solid white"}),
+                                                html.Div(style={"flex": "1", "background": "#CFF0A1", "borderLeft": "1px solid white"}),
+                                                html.Div(style={"flex": "1", "background": "#F2E96B", "borderLeft": "1px solid white"}),
+                                            ]
+                                        ),
+                                        html.Div(
+                                            style={"display": "flex", "justifyContent": "space-between", "fontSize": "10px", "color": "#708090", "fontWeight": "500"},
+                                            children=[
+                                                html.Span("0 Pop"),
+                                                html.Span("Max Pop")
+                                            ]
+                                        )
+                                    ])
+                                ]
+                            ),
+                            html.Div(
+                                dcc.Graph(id="growth-chart", config={"displaylogo": False}, style={"height": "160px"}),
+                                style={"marginTop": "20px", "width": "100%"},
+                            ),
+                            html.Div(id="landuse-breakdown", style={"display": "none"})
+                        ]
+                    )
+                ]
             )
-        ],
+        ]
     )
 
     @app.callback(
         Output("route-map", "figure"),
+        Output("growth-chart", "figure"),
         Output("radius-text", "children"),
+        Output("year-text", "children"),
         Output("population-kpi", "children"),
         Output("opportunity-kpi", "children"),
         Output("landuse-breakdown", "children"),
         Input("radius-slider", "value"),
+        Input("year-slider", "value"),
     )
-    def update_map(radius_m: int):
+    def update_map(radius_m: int, target_year: int):
+        growth_multiplier = calculate_growth_multiplier(target_year)
         fig, pop_total, point_total, by_land_use = build_figure(
             proposed_stations=proposed_stations,
             existing_stations=existing_stations,
             opportunities=opportunities,
             radius_m=radius_m,
+            growth_multiplier=growth_multiplier,
         )
+
+        chart_fig = build_growth_chart(opportunities, radius_m, target_year)
 
         land_use_lines = []
         for use_name, value in by_land_use.items():
@@ -443,23 +667,29 @@ def main() -> None:
                     html.Span("■", style={"color": color, "marginRight": "8px"}),
                     html.Span(f"{use_name}: {int(value):,}"),
                 ],
-                style={"marginBottom": "4px"},
+                style={"marginBottom": "4px", "flex": "1 1 45%"},
             )
             land_use_lines.append(line)
 
         if not land_use_lines:
             land_use_lines = [html.Div("No opportunities in the selected radius", style={"color": "#8A9BA8"})]
 
-        radius_text = f"Current reach: {radius_m:,} m around each possible station"
+        radius_text = f"Current reach: {radius_m:,} m"
+        year_text = f"Forecast Year: {target_year}"
 
         return (
             fig,
+            chart_fig,
             radius_text,
+            year_text,
             f"{pop_total:,}",
             f"{point_total:,}",
             land_use_lines,
         )
 
+setup_app()
+
+if __name__ == "__main__":
     try:
         app.run(debug=False, use_reloader=False, host='127.0.0.1', port=8050, threaded=True)
     except (OSError, PermissionError) as e:
@@ -467,7 +697,3 @@ def main() -> None:
         if "Operation not permitted" not in str(e):
             raise
         print(f"\nApp is running at http://127.0.0.1:8050/")
-
-
-if __name__ == "__main__":
-    main()
