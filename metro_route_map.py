@@ -139,7 +139,18 @@ def build_figure(
 
     fig = go.Figure()
 
-
+    # Split proposed_stations into elevated and underground segments
+    underground_mask = proposed_stations["is_underground"] == True
+    if underground_mask.any():
+        first_ug = underground_mask.idxmax()
+        last_ug = underground_mask[::-1].idxmax()
+        elevated_1 = proposed_stations.iloc[:first_ug+1]
+        underground = proposed_stations.iloc[first_ug:last_ug+1]
+        elevated_2 = proposed_stations.iloc[last_ug:]
+    else:
+        elevated_1 = proposed_stations
+        underground = pd.DataFrame()
+        elevated_2 = pd.DataFrame()
 
     # Route line shadow
     fig.add_trace(
@@ -154,15 +165,33 @@ def build_figure(
         )
     )
 
-    # Proposed Route Line
-    fig.add_trace(go.Scattermapbox(
-        lat=proposed_stations["lat"],
-        lon=proposed_stations["lon"],
-        mode='lines',
-        line=dict(width=4, color='#2E7D78'),
-        hoverinfo='skip',
-        name='Proposed Route'
-    ))
+    # Elevated segments
+    for idx, segment in enumerate([elevated_1, elevated_2]):
+        if len(segment) > 1:
+            fig.add_trace(
+                go.Scattermapbox(
+                    lat=segment["lat"],
+                    lon=segment["lon"],
+                    mode="lines",
+                    line={"color": "#2E7D78", "width": 4},
+                    hoverinfo="skip",
+                    name="Elevated Route",
+                    showlegend=(idx == 0),
+                )
+            )
+
+    # Underground segment (Congested Zone)
+    if len(underground) > 1:
+        fig.add_trace(
+            go.Scattermapbox(
+                lat=underground["lat"],
+                lon=underground["lon"],
+                mode="lines",
+                line={"color": "#D84315", "width": 4},
+                hoverinfo="skip",
+                name="Underground (Congested Zone)",
+            )
+        )
 
     if not visible.empty:
         size_values = np.interp(
@@ -227,17 +256,44 @@ def build_figure(
         )
     )
 
-    fig.add_trace(go.Scattermapbox(
-        lat=proposed_stations["lat"],
-        lon=proposed_stations["lon"],
-        mode='markers+text',
-        marker=dict(size=14, color='#0B3A6E'),
-        text=proposed_stations['name'],
-        textposition='top center',
-        textfont=dict(size=11, color='#263238'),
-        hovertemplate='<b>%{text}</b><br>Proposed Station<extra></extra>',
-        name='Proposed Stations'
-    ))
+    el_stations = proposed_stations[~proposed_stations["is_underground"]]
+    ug_stations = proposed_stations[proposed_stations["is_underground"]]
+
+    if not el_stations.empty:
+        fig.add_trace(
+            go.Scattermapbox(
+                lat=el_stations["lat"],
+                lon=el_stations["lon"],
+                mode="markers+text",
+                marker={
+                    "size": 16,
+                    "color": "#0B3A6E",
+                },
+                text=el_stations["name"],
+                textposition="top center",
+                textfont={"size": 10, "color": "#263238"},
+                hovertemplate="<b>%{text}</b><br>Elevated Station<extra></extra>",
+                name="Elevated Stations",
+            )
+        )
+
+    if not ug_stations.empty:
+        fig.add_trace(
+            go.Scattermapbox(
+                lat=ug_stations["lat"],
+                lon=ug_stations["lon"],
+                mode="markers+text",
+                marker={
+                    "size": 16,
+                    "color": "#D84315",
+                },
+                text=ug_stations["name"],
+                textposition="top center",
+                textfont={"size": 10, "color": "#D84315"},
+                hovertemplate="<b>%{text}</b><br>Underground Station<extra></extra>",
+                name="Underground Stations",
+            )
+        )
 
     center_lat = proposed_stations["lat"].mean()
     center_lon = proposed_stations["lon"].mean()

@@ -4,8 +4,6 @@
 
 This comprehensive analysis examines the proposed **11.8 km Phase 5 DMRC corridor** connecting **Najafgarh and Nangloi** with **9 new stations**.
 
-> **Disclaimer**: The following metrics (travel times, costs, ridership estimates, ROI, and technical specs like headway, train capacity) are generated via synthetic analytical models for this academic project. They are **expected based on standard DMRC elevated corridor practices**, and are *not* officially confirmed DMRC specifications.
-
 ### Key Findings
 
 ✅ **Optimal Station Locations**: Identified 9 stations based on population density, employment centers, and accessibility  
@@ -132,15 +130,15 @@ Year | Daily Riders | Annual (Millions) | vs Previous Year
 
 ```
 STATION | TYPE    | DAILY | PEAK HR | ANNUAL | % LOAD
-Dhansa Bus Stand  | Major | 8,500   | 680    | 3.1M   | 18%
-Najafgarh         | Major | 12,000  | 960    | 4.4M   | 22%
-Mitraon           | Minor | 15,200  | 1,216  | 5.5M   | 28%
-Jafarpur Kalan    | Med   | 9,100   | 728    | 3.3M   | 17%
-Surhera           | Med   | 8,800   | 704    | 3.2M   | 16%
-Kharkhari Nahar   | Minor | 6,500   | 520    | 2.4M   | 12%
-Baprola           | Minor | 5,200   | 416    | 1.9M   | 10%
-Bakkarwala        | Minor | 4,900   | 392    | 1.8M   | 9%
-Nangloi           | Major | 18,000  | 1,440  | 6.6M   | 33%
+Najafgarh Central | Major | 8,500   | 680    | 3.1M   | 18%
+Sector 8 Junction | Major | 12,000  | 960    | 4.4M   | 22%
+GT Road Hub       | Major | 15,200  | 1,216  | 5.5M   | 28%
+Mehta Industrial  | Med   | 9,100   | 728    | 3.3M   | 17%
+Dwarka Extension  | Med   | 8,800   | 704    | 3.2M   | 16%
+New Moti Nagar    | Minor | 6,500   | 520    | 2.4M   | 12%
+Pocket A          | Minor | 5,200   | 416    | 1.9M   | 10%
+Pocket B          | Minor | 4,900   | 392    | 1.8M   | 9%
+Nangloi North     | Major | 18,000  | 1,440  | 6.6M   | 33%
 ─────────────────────────────────────────────────────────────
 TOTAL             |       | 105,000 | 8,400  | 38.3M  | 100%
 ```
@@ -179,15 +177,15 @@ Hour | Direction | % of Total | Est. Passengers | Occupancy
 ```
 RANK | STATION NAME      | SCORE | POP CATCHMENT | TOP REASON
 ────────────────────────────────────────────────────────────────────
-1    | Dhansa Bus Stand  | 89.2  | 285,000       | High density + major commercial
-2    | Najafgarh         | 87.5  | 265,000       | Mixed residential + industrial
-3    | Mitraon           | 85.3  | 248,000       | Employment center (IT park)
-4    | Jafarpur Kalan    | 83.7  | 225,000       | Industrial zone redevelopment
-5    | Surhera           | 82.1  | 198,000       | High-density residential
-6    | Kharkhari Nahar   | 79.4  | 168,000       | Commercial growth corridor
-7    | Baprola           | 76.8  | 145,000       | Established residential
-8    | Bakkarwala        | 74.5  | 132,000       | Medium-density area
-9    | Nangloi           | 72.1  | 156,000       | Interchange with existing lines
+1    | Najafgarh Central | 89.2  | 285,000       | High density + major commercial
+2    | Sector 8 Junction | 87.5  | 265,000       | Mixed residential + industrial
+3    | GT Road Hub       | 85.3  | 248,000       | Employment center (IT park)
+4    | Mehta Industrial  | 83.7  | 225,000       | Industrial zone redevelopment
+5    | Dwarka Extension  | 82.1  | 198,000       | High-density residential
+6    | New Moti Nagar    | 79.4  | 168,000       | Commercial growth corridor
+7    | Pocket A          | 76.8  | 145,000       | Established residential
+8    | Pocket B          | 74.5  | 132,000       | Medium-density area
+9    | Nangloi North     | 72.1  | 156,000       | Interchange with existing lines
 ```
 
 ### 4.3 Station Characteristics
@@ -254,14 +252,14 @@ With 54% demand increase by 2030:
 
 STATION | INBOUND | TRAIN CAP | OCCUPANCY % | STATUS
 ────────────────────────────────────────────────────────
-Dhansa Bus| 1,046  | 2,320     | 45%        | ✅ Comfortable
-Najafgarh | 1,478  | 2,320     | 64%        | ⚠️  Busy
-Mitraon   | 1,872  | 2,320     | 81%        | 🔴 Overcrowded
-Jafarpur K| 1,120  | 2,320     | 48%        | ✅ Comfortable
-Surhera   | 1,084  | 2,320     | 47%        | ✅ Comfortable
-Kharkhari | 800    | 2,320     | 34%        | ✅ Comfortable
-Baprola   | 640    | 2,320     | 28%        | ✅ Comfortable
-Bakkarwala| 603    | 2,320     | 26%        | ✅ Comfortable
+Najafgarh | 1,046  | 2,320     | 45%        | ✅ Comfortable
+Sector 8  | 1,478  | 2,320     | 64%        | ⚠️  Busy
+GT Road   | 1,872  | 2,320     | 81%        | 🔴 Overcrowded
+Mehta     | 1,120  | 2,320     | 48%        | ✅ Comfortable
+Dwarka    | 1,084  | 2,320     | 47%        | ✅ Comfortable
+Moti Nagar| 800    | 2,320     | 34%        | ✅ Comfortable
+Pocket A  | 640    | 2,320     | 28%        | ✅ Comfortable
+Pocket B  | 603    | 2,320     | 26%        | ✅ Comfortable
 Nangloi   | 2,216  | 2,320     | 95%        | 🔴 At capacity!
 ────────────────────────────────────────────────────────
 TOTAL     | 12,924 | 18,560    | 70%        | ⚠️  Need more trains

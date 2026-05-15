@@ -199,15 +199,15 @@
         ];
 
         const proposedStations = [
-            { name: 'Dhansa Bus Stand', lat: 28.612365, lon: 76.977768, type: 'major' },
-            { name: 'Najafgarh', lat: 28.621122, lon: 76.988650, type: 'major' },
-            { name: 'Mitraon', lat: 28.629879, lon: 76.999531, type: 'minor' },
-            { name: 'Jafarpur Kalan', lat: 28.638635, lon: 77.010413, type: 'medium' },
-            { name: 'Surhera', lat: 28.647392, lon: 77.021294, type: 'medium' },
-            { name: 'Kharkhari Nahar', lat: 28.656149, lon: 77.032176, type: 'minor' },
-            { name: 'Baprola', lat: 28.664905, lon: 77.043058, type: 'minor' },
-            { name: 'Bakkarwala', lat: 28.673662, lon: 77.053939, type: 'minor' },
-            { name: 'Nangloi', lat: 28.682419, lon: 77.064821, type: 'major' }
+            { name: 'Dhansa Bus Stand', lat: 28.612365, lon: 76.977768, type: 'major', isUnderground: false },
+            { name: 'Mitraon', lat: 28.623174, lon: 76.993368, type: 'minor', isUnderground: false },
+            { name: 'Dichaon Kalan', lat: 28.633983, lon: 77.008968, type: 'medium', isUnderground: false },
+            { name: 'Baprola', lat: 28.644792, lon: 77.024568, type: 'minor', isUnderground: true },
+            { name: 'Ranhola', lat: 28.655601, lon: 77.040167, type: 'major', isUnderground: true },
+            { name: 'Nihal Vihar', lat: 28.662305, lon: 77.046331, type: 'medium', isUnderground: true },
+            { name: 'Shiv Ram Park', lat: 28.66901, lon: 77.052494, type: 'minor', isUnderground: false },
+            { name: 'Kavita Colony', lat: 28.675715, lon: 77.058657, type: 'minor', isUnderground: false },
+            { name: 'Nangloi Metro', lat: 28.682419, lon: 77.064821, type: 'major', isUnderground: false }
         ];
 
         // Land use palette
@@ -403,16 +403,36 @@
                 name: 'Phase 5 Route'
             });
 
-            // Route line (core)
-            traces.push({
-                lat: proposedStations.map(s => s.lat),
-                lon: proposedStations.map(s => s.lon),
-                mode: 'lines',
-                line: { color: '#2E7D78', width: 4 },
-                hoverinfo: 'skip',
-                name: 'Elevated Route',
-                showlegend: false
-            });
+            // Route line (core) - handle elevated and underground
+            const firstUg = proposedStations.findIndex(s => s.isUnderground);
+            const reverseUg = proposedStations.slice().reverse().findIndex(s => s.isUnderground);
+            const lastUg = reverseUg !== -1 ? proposedStations.length - 1 - reverseUg : -1;
+            
+            let elevated1 = proposedStations, underground = [], elevated2 = [];
+            if (firstUg !== -1) {
+                elevated1 = proposedStations.slice(0, firstUg + 1);
+                underground = proposedStations.slice(firstUg, lastUg + 1);
+                elevated2 = proposedStations.slice(lastUg);
+            }
+
+            if (elevated1.length > 1) {
+                traces.push({
+                    lat: elevated1.map(s => s.lat), lon: elevated1.map(s => s.lon), mode: 'lines',
+                    line: { color: '#2E7D78', width: 4 }, hoverinfo: 'skip', name: 'Elevated Route'
+                });
+            }
+            if (underground.length > 1) {
+                traces.push({
+                    lat: underground.map(s => s.lat), lon: underground.map(s => s.lon), mode: 'lines',
+                    line: { color: '#D84315', width: 4 }, hoverinfo: 'skip', name: 'Underground (Congested Zone)'
+                });
+            }
+            if (elevated2.length > 1) {
+                traces.push({
+                    lat: elevated2.map(s => s.lat), lon: elevated2.map(s => s.lon), mode: 'lines',
+                    line: { color: '#2E7D78', width: 4 }, hoverinfo: 'skip', name: 'Elevated Route', showlegend: false
+                });
+            }
 
             // Opportunities
             if (visibleOpps.length > 0) {
@@ -462,17 +482,36 @@
             });
 
             // Proposed stations
-            traces.push({
-                lat: proposedStations.map(s => s.lat),
-                lon: proposedStations.map(s => s.lon),
-                mode: 'markers+text',
-                marker: { size: 16, color: '#0B3A6E', line: { width: 2, color: '#E9F1FF' } },
-                text: proposedStations.map(s => s.name),
-                textposition: 'top center',
-                textfont: { size: 10, color: '#263238' },
-                hovertemplate: '<b>%{text}</b><br>Elevated Station<extra></extra>',
-                name: 'Proposed Stations'
-            });
+            const elStations = proposedStations.filter(s => !s.isUnderground);
+            const ugStations = proposedStations.filter(s => s.isUnderground);
+
+            if (elStations.length > 0) {
+                traces.push({
+                    lat: elStations.map(s => s.lat),
+                    lon: elStations.map(s => s.lon),
+                    mode: 'markers+text',
+                    marker: { size: 16, color: '#0B3A6E', line: { width: 2, color: '#E9F1FF' } },
+                    text: elStations.map(s => s.name),
+                    textposition: 'top center',
+                    textfont: { size: 10, color: '#263238' },
+                    hovertemplate: '<b>%{text}</b><br>Elevated Station<extra></extra>',
+                    name: 'Elevated Stations'
+                });
+            }
+
+            if (ugStations.length > 0) {
+                traces.push({
+                    lat: ugStations.map(s => s.lat),
+                    lon: ugStations.map(s => s.lon),
+                    mode: 'markers+text',
+                    marker: { size: 16, color: '#D84315', line: { width: 2, color: '#FFCCBC' } },
+                    text: ugStations.map(s => s.name),
+                    textposition: 'top center',
+                    textfont: { size: 10, color: '#D84315' },
+                    hovertemplate: '<b>%{text}</b><br>Underground Station<extra></extra>',
+                    name: 'Underground Stations'
+                });
+            }
 
             const centerLat = proposedStations.reduce((sum, s) => sum + s.lat, 0) / proposedStations.length;
             const centerLon = proposedStations.reduce((sum, s) => sum + s.lon, 0) / proposedStations.length;
