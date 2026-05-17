@@ -462,7 +462,7 @@ def setup_app() -> None:
                 style={"position": "absolute", "top": 0, "left": 0, "width": "100%", "height": "100%", "zIndex": "1"},
                 children=[
                     dcc.Store(id="zoom-store", data=11.2),
-                    dcc.Graph(id="route-map", style={"height": "100%"}, config={"displaylogo": False, "scrollZoom": True}),
+                    dcc.Graph(id="route-map", style={"height": "100%"}, config={"displaylogo": False, "scrollZoom": True, "displayModeBar": False}),
                     html.Div(
                         style={"position": "absolute", "top": "80px", "right": "20px", "display": "flex", "flexDirection": "column", "gap": "10px", "zIndex": "1000"},
                         children=[
@@ -667,7 +667,7 @@ def setup_app() -> None:
                                 ]
                             ),
                             html.Div(
-                                dcc.Graph(id="growth-chart", config={"displaylogo": False}, style={"height": "160px"}),
+                                dcc.Graph(id="growth-chart", config={"displaylogo": False, "displayModeBar": False}, style={"height": "160px"}),
                                 style={"marginTop": "20px", "width": "100%"},
                             ),
                             html.Div(id="landuse-breakdown", style={"display": "none"})
