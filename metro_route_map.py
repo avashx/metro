@@ -82,6 +82,30 @@ def station_weight(station_type: str) -> float:
     return mapping.get(station_type, 0.65)
 
 
+def generate_square_polygon(lat: float, lon: float, size_deg: float) -> Tuple[list, list]:
+    lats = [lat - size_deg, lat + size_deg, lat + size_deg, lat - size_deg, lat - size_deg, None]
+    lons = [lon - size_deg, lon - size_deg, lon + size_deg, lon + size_deg, lon - size_deg, None]
+    return lats, lons
+
+
+def generate_triangle_polygon(lat: float, lon: float, size_deg: float) -> Tuple[list, list]:
+    lats = [lat - size_deg, lat + size_deg, lat - size_deg, lat - size_deg, None]
+    lons = [lon - size_deg, lon, lon + size_deg, lon - size_deg, None]
+    return lats, lons
+
+
+def generate_shapes_from_df(df: pd.DataFrame, shape_type: str, size_deg: float) -> Tuple[list, list]:
+    all_lats, all_lons = [], []
+    for _, row in df.iterrows():
+        if shape_type == "square":
+            l, ln = generate_square_polygon(row["lat"], row["lon"], size_deg)
+        else:
+            l, ln = generate_triangle_polygon(row["lat"], row["lon"], size_deg)
+        all_lats.extend(l)
+        all_lons.extend(ln)
+    return all_lats, all_lons
+
+
 def make_land_use_inventory(stations: pd.DataFrame, station_demand: pd.DataFrame) -> pd.DataFrame:
     """Build synthetic nearby land-use opportunities around each route station."""
     demand_by_station = station_demand.groupby("station", as_index=False)["daily_passengers"].mean()
@@ -311,18 +335,23 @@ def build_figure(
             )
         )
 
+    tr_lats, tr_lons = generate_shapes_from_df(existing_stations, "triangle", 0.0012)
+    fig.add_trace(
+        go.Scattermapbox(
+            lat=tr_lats, lon=tr_lons, mode="lines", fill="toself",
+            fillcolor="#1F2A44", line=dict(color="#1F2A44", width=1),
+            hoverinfo="skip", showlegend=False
+        )
+    )
     fig.add_trace(
         go.Scattermapbox(
             lat=existing_stations["lat"],
             lon=existing_stations["lon"],
             mode="markers",
-            marker={
-                "size": 12,
-                "color": "#1F2A44",
-            },
+            marker={"size": 16, "color": "rgba(0,0,0,0)"},
             text=existing_stations["name"],
             hovertemplate="<b>%{text}</b><br>Existing station<extra></extra>",
-            name="Existing Stations",
+            name="▲ Existing Stations",
         )
     )
 
@@ -330,38 +359,48 @@ def build_figure(
     ug_stations = proposed_stations[proposed_stations["is_underground"]]
 
     if not el_stations.empty:
+        sq_lats, sq_lons = generate_shapes_from_df(el_stations, "square", 0.0012)
+        fig.add_trace(
+            go.Scattermapbox(
+                lat=sq_lats, lon=sq_lons, mode="lines", fill="toself",
+                fillcolor="#0B3A6E", line=dict(color="#0B3A6E", width=1),
+                hoverinfo="skip", showlegend=False
+            )
+        )
         fig.add_trace(
             go.Scattermapbox(
                 lat=el_stations["lat"],
                 lon=el_stations["lon"],
                 mode="markers+text",
-                marker={
-                    "size": 16,
-                    "color": "#0B3A6E",
-                },
+                marker={"size": 16, "color": "rgba(0,0,0,0)"},
                 text=el_stations["name"],
-                textposition="top center",
+                textposition="bottom center",
                 textfont={"size": 10, "color": "#263238"},
                 hovertemplate="<b>%{text}</b><br>Elevated Station<extra></extra>",
-                name="Elevated Stations",
+                name="■ Elevated Stations",
             )
         )
 
     if not ug_stations.empty:
+        sq_lats, sq_lons = generate_shapes_from_df(ug_stations, "square", 0.0012)
+        fig.add_trace(
+            go.Scattermapbox(
+                lat=sq_lats, lon=sq_lons, mode="lines", fill="toself",
+                fillcolor="#D84315", line=dict(color="#D84315", width=1),
+                hoverinfo="skip", showlegend=False
+            )
+        )
         fig.add_trace(
             go.Scattermapbox(
                 lat=ug_stations["lat"],
                 lon=ug_stations["lon"],
                 mode="markers+text",
-                marker={
-                    "size": 16,
-                    "color": "#D84315",
-                },
+                marker={"size": 16, "color": "rgba(0,0,0,0)"},
                 text=ug_stations["name"],
-                textposition="top center",
+                textposition="bottom center",
                 textfont={"size": 10, "color": "#D84315"},
                 hovertemplate="<b>%{text}</b><br>Underground Station<extra></extra>",
-                name="Underground Stations",
+                name="■ Underground Stations",
             )
         )
 
@@ -422,7 +461,8 @@ def setup_app() -> None:
             html.Div(
                 style={"position": "absolute", "top": 0, "left": 0, "width": "100%", "height": "100%", "zIndex": "1"},
                 children=[
-                    dcc.Graph(id="route-map", style={"height": "100%"}, config={"displaylogo": False}),
+                    dcc.Store(id="zoom-store", data=11.2),
+                    dcc.Graph(id="route-map", style={"height": "100%"}, config={"displaylogo": False, "scrollZoom": True}),
                     html.Div(
                         style={"position": "absolute", "top": "80px", "right": "20px", "display": "flex", "flexDirection": "column", "gap": "10px", "zIndex": "1000"},
                         children=[
@@ -430,8 +470,7 @@ def setup_app() -> None:
                             html.Div(
                                 style={**CTRL_STYLE, "width": "36px", "flexDirection": "column", "padding": "10px 0", "boxSizing": "border-box"},
                                 children=[
-                                    html.Img(src=SVG_EXPAND, style={"marginBottom": "16px"}),
-                                    html.Img(src=SVG_RULER)
+                                    html.Img(src=SVG_EXPAND),
                                 ]
                             )
                         ]
@@ -442,7 +481,6 @@ def setup_app() -> None:
                             html.Div(
                                 style={**CTRL_STYLE, "height": "36px", "padding": "0 16px", "gap": "20px", "boxSizing": "border-box"},
                                 children=[
-                                    html.Img(src=SVG_STAR),
                                     html.Img(src=SVG_LAYERS),
                                     html.Img(src=SVG_GLOBE)
                                 ]
@@ -450,10 +488,15 @@ def setup_app() -> None:
                             html.Div(
                                 style={**CTRL_STYLE, "width": "36px", "flexDirection": "column", "padding": "10px 0", "gap": "14px", "boxSizing": "border-box"},
                                 children=[
-                                    html.Span("+", style={"color": "#A0AAB5", "fontSize": "22px", "lineHeight": "1", "fontFamily": "monospace"}),
-                                    html.Span("-", style={"color": "#A0AAB5", "fontSize": "26px", "lineHeight": "1", "fontFamily": "monospace"})
+                                    html.Span("+", id="zoom-in-btn", n_clicks=0, style={"color": "#A0AAB5", "fontSize": "22px", "lineHeight": "1", "fontFamily": "monospace", "cursor": "pointer", "userSelect": "none"}),
+                                    html.Span("−", id="zoom-out-btn", n_clicks=0, style={"color": "#A0AAB5", "fontSize": "26px", "lineHeight": "1", "fontFamily": "monospace", "cursor": "pointer", "userSelect": "none"})
                                 ]
-                            )
+                            ),
+                            html.Div(
+                                id="reset-view-btn", n_clicks=0,
+                                style={**CTRL_STYLE, "width": "36px", "height": "36px", "boxSizing": "border-box"},
+                                children=[html.Span("⟲", style={"color": "#A0AAB5", "fontSize": "20px", "lineHeight": "1"})]
+                            ),
                         ]
                     )
                 ]
@@ -484,7 +527,6 @@ def setup_app() -> None:
                                     html.Div(
                                         style={"display": "flex", "alignItems": "center"},
                                         children=[
-                                            html.Img(src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='20' height='20' fill='%23203040'><path d='M12 2L2 7l10 5 10-5-10-5zM2 12l10 5 10-5M2 17l10 5 10-5'/></svg>", style={"marginRight": "8px", "minWidth": "20px"}),
                                             html.H3("DMRC Population based Metro demand analysis", style={"margin": "0", "color": "#203040", "fontSize": "14px", "fontWeight": "600"})
                                         ]
                                     ),
@@ -637,6 +679,27 @@ def setup_app() -> None:
     )
 
     @app.callback(
+        Output("zoom-store", "data"),
+        Input("zoom-in-btn", "n_clicks"),
+        Input("zoom-out-btn", "n_clicks"),
+        Input("reset-view-btn", "n_clicks"),
+        dash.dependencies.State("zoom-store", "data"),
+        prevent_initial_call=True,
+    )
+    def update_zoom(zoom_in_clicks, zoom_out_clicks, reset_clicks, current_zoom):
+        ctx = dash.callback_context
+        if not ctx.triggered:
+            return current_zoom
+        trigger = ctx.triggered[0]["prop_id"].split(".")[0]
+        if trigger == "zoom-in-btn":
+            return min(current_zoom + 0.5, 18)
+        elif trigger == "zoom-out-btn":
+            return max(current_zoom - 0.5, 3)
+        elif trigger == "reset-view-btn":
+            return 11.2
+        return current_zoom
+
+    @app.callback(
         Output("route-map", "figure"),
         Output("growth-chart", "figure"),
         Output("radius-text", "children"),
@@ -646,8 +709,9 @@ def setup_app() -> None:
         Output("landuse-breakdown", "children"),
         Input("radius-slider", "value"),
         Input("year-slider", "value"),
+        Input("zoom-store", "data"),
     )
-    def update_map(radius_m: int, target_year: int):
+    def update_map(radius_m: int, target_year: int, zoom_level: float):
         growth_multiplier = calculate_growth_multiplier(target_year)
         fig, pop_total, point_total, by_land_use = build_figure(
             proposed_stations=proposed_stations,
@@ -656,6 +720,10 @@ def setup_app() -> None:
             radius_m=radius_m,
             growth_multiplier=growth_multiplier,
         )
+
+        # Apply zoom from store
+        if zoom_level is not None:
+            fig.update_layout(mapbox_zoom=zoom_level)
 
         chart_fig = build_growth_chart(opportunities, radius_m, target_year)
 

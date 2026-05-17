@@ -84,9 +84,9 @@ class DataLoader:
         
         # Existing stations (Green, Blue, Grey Lines in West Delhi area)
         existing = pd.DataFrame({
-            'name': ['Nangloi', 'Nangloi Junction', 'Rajdhani Park', 'Udyog Nagar'],
-            'lat': [28.608, 28.598, 28.588, 28.578],
-            'lon': [77.142, 77.155, 77.168, 77.181],
+            'name': ['Nangloi', 'Nangloi Railway Station', 'Surajmal Stadium', 'Udyog Nagar'],
+            'lat': [28.682485303589058, 28.68230095554265, 28.682073784591925, 28.68102529684878],
+            'lon': [77.06478854232898, 77.05619908692096, 77.07452440104969, 77.08087850434607],
             'line': ['Green', 'Blue', 'Grey', 'Green'],
             'type': ['major', 'major', 'minor', 'minor']
         })
@@ -95,8 +95,8 @@ class DataLoader:
         proposed = pd.DataFrame({
             'name': [
                 'Dhansa Bus Stand',
-                'Mitraon',
                 'Dichaon Kalan',
+                'Jai Vihar',
                 'Baprola',
                 'Ranhola',
                 'Nihal Vihar',
