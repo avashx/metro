@@ -432,6 +432,28 @@ app = dash.Dash(__name__)
 server = app.server
 app.title = "Phase 5 Route Opportunity Map"
 
+# Inject viewport meta for correct mobile scaling
+app.index_string = '''
+<!DOCTYPE html>
+<html>
+    <head>
+        {%metas%}
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+        <title>{%title%}</title>
+        {%favicon%}
+        {%css%}
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+</html>
+'''
+
 def setup_app() -> None:
     """Run the Dash app setup."""
     loader = DataLoader()
@@ -458,12 +480,20 @@ def setup_app() -> None:
             "overflow": "hidden"
         },
         children=[
+            # Mobile FAB – toggles the bottom-sheet panel open/closed
+            html.Button(
+                "⬆ Route Analysis",
+                id="panel-toggle-fab",
+                n_clicks=0,
+            ),
             html.Div(
                 style={"position": "absolute", "top": 0, "left": 0, "width": "100%", "height": "100%", "zIndex": "1"},
                 children=[
                     dcc.Store(id="zoom-store", data=11.2),
+                    dcc.Store(id="panel-open-store", data=False),
                     dcc.Graph(id="route-map", style={"height": "100%"}, config={"displaylogo": False, "scrollZoom": True, "displayModeBar": False}),
                     html.Div(
+                        id="map-controls-top",
                         style={"position": "absolute", "top": "80px", "right": "20px", "display": "flex", "flexDirection": "column", "gap": "10px", "zIndex": "1000"},
                         children=[
                             html.Div(style={**CTRL_STYLE, "width": "36px", "height": "36px", "boxSizing": "border-box"}, children=[html.Img(src=SVG_CHAT)]),
@@ -476,6 +506,7 @@ def setup_app() -> None:
                         ]
                     ),
                     html.Div(
+                        id="map-controls-bottom",
                         style={"position": "absolute", "bottom": "30px", "right": "20px", "display": "flex", "alignItems": "flex-end", "gap": "12px", "zIndex": "1000"},
                         children=[
                             html.Div(
@@ -502,6 +533,7 @@ def setup_app() -> None:
                 ]
             ),
             html.Div(
+                id="sidebar-panel",
                 style={
                     "position": "absolute",
                     "top": "20px",
@@ -518,6 +550,8 @@ def setup_app() -> None:
                     "flexDirection": "column"
                 },
                 children=[
+                    # Mobile drag handle pill (hidden on desktop via CSS)
+                    html.Div(id="mobile-handle"),
                     html.Div(
                         style={"padding": "20px 20px 10px 20px", "borderBottom": "1px solid #EAEAEA"},
                         children=[
@@ -698,6 +732,32 @@ def setup_app() -> None:
         elif trigger == "reset-view-btn":
             return 11.2
         return current_zoom
+
+    # ── Mobile panel toggle (clientside = no server round-trip) ──────────────
+    app.clientside_callback(
+        """
+        function(n_clicks, is_open) {
+            var panel = document.getElementById('sidebar-panel');
+            var fab   = document.getElementById('panel-toggle-fab');
+            if (!panel) return [is_open, window.dash_clientside.no_update];
+
+            var newOpen = !is_open;
+            if (newOpen) {
+                panel.classList.add('panel-open');
+                if (fab) fab.textContent = '✕ Close Panel';
+            } else {
+                panel.classList.remove('panel-open');
+                if (fab) fab.textContent = '⬆ Route Analysis';
+            }
+            return [newOpen, window.dash_clientside.no_update];
+        }
+        """,
+        Output("panel-open-store", "data"),
+        Output("panel-toggle-fab", "children"),
+        Input("panel-toggle-fab", "n_clicks"),
+        dash.dependencies.State("panel-open-store", "data"),
+        prevent_initial_call=True,
+    )
 
     @app.callback(
         Output("route-map", "figure"),

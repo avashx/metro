@@ -1,0 +1,154 @@
+/* ─────────────────────────────────────────────────────────────
+   DMRC Phase 5 – Responsive styles
+   Loaded automatically by Dash from the assets/ folder.
+   ───────────────────────────────────────────────────────────── */
+
+/* ── Google Font (Inter) ── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ── Base reset for all viewports ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    font-family: 'Inter', 'Segoe UI', Helvetica, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Sidebar panel ── */
+#sidebar-panel {
+    /* Desktop defaults are set inline; these CSS rules add transitions */
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                bottom 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    scrollbar-width: thin;
+    scrollbar-color: #D0D7E0 transparent;
+}
+#sidebar-panel::-webkit-scrollbar { width: 4px; }
+#sidebar-panel::-webkit-scrollbar-thumb { background: #D0D7E0; border-radius: 4px; }
+
+/* ── Map controls ── */
+#map-controls-top, #map-controls-bottom {
+    transition: all 0.2s ease;
+}
+
+/* ── Mobile handle (drag pill) ── */
+#mobile-handle {
+    display: none;
+    width: 40px;
+    height: 4px;
+    background: #C8D0DA;
+    border-radius: 2px;
+    margin: 8px auto 4px;
+    cursor: grab;
+}
+
+/* ── Mobile toggle FAB ── */
+#panel-toggle-fab {
+    display: none;
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1A1D20;
+    color: #fff;
+    border: none;
+    border-radius: 24px;
+    padding: 10px 22px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    z-index: 2000;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.35);
+    white-space: nowrap;
+}
+#panel-toggle-fab:active { transform: translateX(-50%) scale(0.96); }
+
+/* ════════════════════════════════════════════════════════
+   TABLET  (≤ 900 px)
+   ════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+    #sidebar-panel {
+        width: 300px !important;
+    }
+}
+
+/* ════════════════════════════════════════════════════════
+   MOBILE  (≤ 640 px)
+   Sidebar becomes a bottom sheet; FAB toggles it open/closed.
+   ════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+
+    /* Show mobile handle + FAB */
+    #mobile-handle { display: block; }
+    #panel-toggle-fab { display: block; }
+
+    /* ── Bottom-sheet sidebar ── */
+    #sidebar-panel {
+        /* Override all the desktop absolute positioning */
+        position: fixed !important;
+        top: auto !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        border-radius: 18px 18px 0 0 !important;
+        max-height: 72vh !important;
+        overflow-y: auto !important;
+        z-index: 1500 !important;
+        /* Start collapsed (only handle visible ~30px) */
+        transform: translateY(calc(100% - 30px));
+        box-shadow: 0 -4px 24px rgba(0,0,0,0.18) !important;
+    }
+
+    /* Open state toggled via JS */
+    #sidebar-panel.panel-open {
+        transform: translateY(0);
+    }
+
+    /* ── Map controls: shift away from FAB / bottom sheet ── */
+    #map-controls-top {
+        top: 12px !important;
+        right: 12px !important;
+    }
+    #map-controls-bottom {
+        bottom: 48px !important;   /* above FAB */
+        right: 12px !important;
+    }
+
+    /* ── Make growth chart shorter on mobile ── */
+    #growth-chart .js-plotly-plot,
+    #growth-chart {
+        height: 120px !important;
+    }
+
+    /* ── Tighten inner padding ── */
+    #sidebar-panel > div:first-child { padding: 0 !important; }
+    #sidebar-panel > div:last-child  { padding: 14px !important; }
+
+    /* ── Sliders: bigger touch targets ── */
+    .rc-slider-handle {
+        width: 22px !important;
+        height: 22px !important;
+        margin-top: -9px !important;
+    }
+}
+
+/* ════════════════════════════════════════════════════════
+   VERY SMALL PHONES  (≤ 400 px)
+   ════════════════════════════════════════════════════════ */
+@media (max-width: 400px) {
+    #sidebar-panel {
+        max-height: 80vh !important;
+    }
+    #panel-toggle-fab {
+        font-size: 12px;
+        padding: 9px 18px;
+    }
+}
